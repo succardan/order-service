@@ -1,0 +1,136 @@
+spring:
+  # Configurações do banco de dados
+  datasource:
+    url: jdbc:postgresql://localhost:5433/postgres
+    username: postgres
+    password: Succar@123
+    driver-class-name: org.postgresql.Driver
+    # Configurações otimizadas do pool de conexões Hikari
+    hikari:
+      maximum-pool-size: 30  # Suporte a mais conexões simultâneas
+      minimum-idle: 10       # Manter mais conexões mínimas
+      connection-timeout: 20000  # 20 segundos para timeout de conexão
+      idle-timeout: 600000   # 10 minutos para timeout de idle
+      max-lifetime: 1800000  # 30 minutos de tempo máximo de vida
+      connection-test-query: SELECT 1  # Query leve para testar conexões
+
+  # Configurações JPA/Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Em produção, apenas validar o esquema
+    show-sql: false       # Desativar em produção para melhor performance
+    properties:
+      hibernate:
+        format_sql: false  # Desativar em produção
+        # Configurações para melhorar performance
+        jdbc:
+          batch_size: 50  # Aumentar tamanho do batch
+        order_inserts: true
+        order_updates: true
+        # Cache de segundo nível
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          region.factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+        generate_statistics: false  # Desativar estatísticas em produção
+        # Otimização de conexões
+        connection:
+          provider_disables_autocommit: true
+        # Otimizar para batch
+        default_batch_fetch_size: 100
+
+  # Configurações de cache
+  cache:
+    type: caffeine
+    cache-names: orders,products,calculations
+    caffeine:
+      spec: maximumSize=10000,expireAfterAccess=3600s
+
+  # Configuração de tarefas assíncronas
+  task:
+    execution:
+      pool:
+        core-size: 15
+        max-size: 50
+        queue-capacity: 2000
+        keep-alive: 60s
+      thread-name-prefix: async-task-
+
+# Configurações do servidor web
+server:
+  port: 8080
+  # Configurações Tomcat otimizadas
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 20
+    max-connections: 8192
+    accept-count: 100
+    connection-timeout: 20000
+
+# Configurações para resiliência
+resilience4j:
+  circuitbreaker:
+    instances:
+      externalServiceA:
+        registerHealthIndicator: true
+        slidingWindowSize: 100
+        minimumNumberOfCalls: 20
+        permittedNumberOfCallsInHalfOpenState: 10
+        waitDurationInOpenState: 30000
+        failureRateThreshold: 50
+      externalServiceB:
+        registerHealthIndicator: true
+        slidingWindowSize: 100
+        minimumNumberOfCalls: 20
+        permittedNumberOfCallsInHalfOpenState: 10
+        waitDurationInOpenState: 30000
+        failureRateThreshold: 50
+  ratelimiter:
+    instances:
+      default:
+        limitForPeriod: 5000
+        limitRefreshPeriod: 1s
+        timeoutDuration: 1s
+  bulkhead:
+    instances:
+      default:
+        maxConcurrentCalls: 100
+  retry:
+    instances:
+      default:
+        maxAttempts: 3
+        waitDuration: 1s
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+
+# Integração com sistemas externos
+external-service:
+  product-a:
+    url: http://localhost:8081/api
+    connect-timeout: 2000
+    read-timeout: 5000
+  product-b:
+    url: http://localhost:8082/api
+    connect-timeout: 2000
+    read-timeout: 5000
+
+# Configuração para métricas e monitoramento
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+# Desativar aviso de "open-in-view"
+spring.jpa.open-in-view: false
