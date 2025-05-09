@@ -18,6 +18,7 @@ public class ExternalOrderDTO {
     private String status;
     private List<ExternalOrderItemDTO> items;
     private BigDecimal totalAmount;
+    private String confirmationId;
 
     @Data
     @Builder

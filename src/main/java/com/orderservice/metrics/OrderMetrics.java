@@ -19,17 +19,17 @@ public class OrderMetrics {
 
     private final MeterRegistry meterRegistry;
 
-    private Counter ordersReceivedCounter;
-    private Counter ordersProcessedCounter;
-    private Counter ordersNotifiedCounter;
-    private Counter ordersErrorCounter;
-    private Counter duplicateOrdersCounter;
+    Counter ordersReceivedCounter;
+    Counter ordersProcessedCounter;
+    Counter ordersNotifiedCounter;
+    Counter ordersErrorCounter;
+    Counter duplicateOrdersCounter;
 
-    private Timer orderCreationTimer;
-    private Timer orderProcessingTimer;
-    private Timer orderNotificationTimer;
-    private Timer externalServiceATimer;
-    private Timer externalServiceBTimer;
+    Timer orderCreationTimer;
+    Timer orderProcessingTimer;
+    Timer orderNotificationTimer;
+    Timer externalServiceATimer;
+    Timer externalServiceBTimer;
 
     @PostConstruct
     public void init() {

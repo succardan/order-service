@@ -42,6 +42,9 @@ public class OrderScheduler {
 
     @Value("${app.scheduler.batch-size:50}")
     private int batchSize;
+    
+    @Value("${app.scheduler.cleanup-enabled:false}")
+    private boolean cleanupEnabled;
 
     /**
      * Processa pedidos pendentes (RECEIVED) que não foram processados
@@ -184,8 +187,6 @@ public class OrderScheduler {
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
     public void cleanupOldOrders() {
-        boolean cleanupEnabled = false;
-
         if (!cleanupEnabled) {
             return;
         }

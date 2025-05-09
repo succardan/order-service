@@ -1,0 +1,41 @@
+spring:
+  config:
+    activate:
+      on-profile: mock
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+  sql:
+    init:
+      mode: never
+
+external-service:
+  product-a:
+    url: http://localhost:8081/api
+  product-b:
+    url: http://localhost:8082/api
+
+# Configurações específicas para o ambiente de mock
+resilience4j:
+  circuitbreaker:
+    instances:
+      externalServiceA:
+        slidingWindowSize: 1
+        minimumNumberOfCalls: 1
+        failureRateThreshold: 1
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 1
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+      externalServiceB:
+        slidingWindowSize: 1
+        minimumNumberOfCalls: 1
+        failureRateThreshold: 1
+        waitDurationInOpenState: 5s
+        permittedNumberOfCallsInHalfOpenState: 1
+        automaticTransitionFromOpenToHalfOpenEnabled: true

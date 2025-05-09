@@ -9,17 +9,11 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import java.util.concurrent.Executor;
 
-/**
- * Configuração otimizada para processamento assíncrono de alto volume de pedidos
- */
 @Configuration
 @EnableAsync
 @EnableScheduling
 public class AsyncConfig {
 
-    /**
-     * Executor para processamento de pedidos com capacidade para alta volumetria
-     */
     @Bean(name = "orderProcessingExecutor")
     public Executor orderProcessingExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -34,9 +28,6 @@ public class AsyncConfig {
         return executor;
     }
 
-    /**
-     * Executor específico para notificações externas
-     */
     @Bean(name = "notificationExecutor")
     public Executor notificationExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -49,9 +40,6 @@ public class AsyncConfig {
         return executor;
     }
 
-    /**
-     * Scheduler para tarefas periódicas (limpeza, health checks, etc.)
-     */
     @Bean
     public ThreadPoolTaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();

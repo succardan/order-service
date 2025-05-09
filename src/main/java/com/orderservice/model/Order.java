@@ -14,7 +14,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -26,7 +25,6 @@ import java.util.UUID;
 
 @Data
 @Entity
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "orders", indexes = {
@@ -62,19 +60,12 @@ public class Order {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(nullable = false)
+    @Column(name = "notified_to_external_b", nullable = false)
     private boolean notifiedToExternalB;
 
-    /**
-     * Contador de tentativas de processamento
-     * Usado para limitar a quantidade de retentativas para pedidos com erro
-     */
     @Column(nullable = false)
     private int retryCount = 0;
 
-    /**
-     * Versão para controle otimista de concorrência
-     */
     @Version
     private Long version;
 
@@ -92,26 +83,17 @@ public class Order {
         }
     }
 
-    /**
-     * Calcula o total do pedido com base nos itens
-     */
     public void calculateTotal() {
         this.totalAmount = items.stream()
                 .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    /**
-     * Adiciona um item ao pedido estabelecendo a relação bidirecional
-     */
     public void addItem(OrderItem item) {
         items.add(item);
         item.setOrder(this);
     }
 
-    /**
-     * Remove um item do pedido e limpa a relação bidirecional
-     */
     public void removeItem(OrderItem item) {
         items.remove(item);
         item.setOrder(null);

@@ -39,9 +39,6 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Implementação otimizada do serviço de pedidos para alta volumetria
- */
 @Service
 @Slf4j
 public class OrderServiceImpl implements OrderService {
@@ -53,6 +50,8 @@ public class OrderServiceImpl implements OrderService {
     private final OrderDuplicateChecker duplicateChecker;
     private final Executor orderProcessingExecutor;
     private final Executor notificationExecutor;
+    
+    private OrderService self;
 
     public OrderServiceImpl(
             OrderRepository orderRepository,
@@ -69,6 +68,7 @@ public class OrderServiceImpl implements OrderService {
         this.duplicateChecker = duplicateChecker;
         this.orderProcessingExecutor = orderProcessingExecutor;
         this.notificationExecutor = notificationExecutor;
+        this.self = this;
     }
 
     @Override
@@ -102,10 +102,6 @@ public class OrderServiceImpl implements OrderService {
         return mapToDto(savedOrder);
     }
 
-    /**
-     * Processamento assíncrono completo do pedido
-     * Executa o processo completo: processamento, cálculo e notificação
-     */
     @Async("orderProcessingExecutor")
     @Transactional
     protected void processOrderAsync(UUID orderId) {
@@ -134,11 +130,6 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    /**
-     * Processamento do pedido com recursos de resiliência
-     * Circuit breaker para isolamento de falhas
-     * Retry para tentativas automáticas em caso de falhas transitórias
-     */
     @Override
     @Transactional(isolation = Isolation.READ_COMMITTED)
     @CacheEvict(value = "orders", key = "#id")
@@ -192,9 +183,6 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    /**
-     * Busca produtos em lote para maior eficiência
-     */
     private Map<String, ExternalProductDTO> fetchProductsInBatch(List<String> productIds) {
         try {
             List<ExternalProductDTO> products = externalProductAClient.getProducts();
@@ -221,10 +209,6 @@ public class OrderServiceImpl implements OrderService {
         return resultMap;
     }
 
-    /**
-     * Metodo de fallback para processamento de pedido
-     * Executado quando o circuit breaker é acionado
-     */
     public OrderDTO processOrderFallback(UUID id, Exception ex) {
         log.warn("Executando fallback para processamento do pedido {}: {}", id, ex.getMessage());
         Order order = findOrderEntityById(id);
@@ -238,11 +222,6 @@ public class OrderServiceImpl implements OrderService {
         return mapToDto(order);
     }
 
-    /**
-     * Notificação para o sistema externo com resiliência e bulkhead
-     * Bulkhead para limitar chamadas paralelas ao sistema externo B
-     * Circuit breaker para detectar falhas no serviço externo
-     */
     @Override
     @Transactional
     @CacheEvict(value = "orders", key = "#id")
@@ -305,19 +284,12 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    /**
-     * Metodo de fallback para notificação
-     * Executado quando o circuit breaker é acionado
-     */
     @Transactional
     public OrderDTO notifyExternalSystemFallback(UUID id, Exception ex) {
         log.warn("Executando fallback para notificação do pedido {}: {}", id, ex.getMessage());
         return getOrderById(id);
     }
 
-    /**
-     * Busca de pedido por ID com cache
-     */
     @Override
     @Transactional
     @Cacheable(value = "orders", key = "#id")
@@ -325,9 +297,6 @@ public class OrderServiceImpl implements OrderService {
         return mapToDto(findOrderEntityById(id));
     }
 
-    /**
-     * Busca de pedido por número com cache
-     */
     @Override
     @Transactional(readOnly = true)
     @Cacheable(value = "orders", key = "#orderNumber")
@@ -337,9 +306,6 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new RuntimeException("Pedido não encontrado: " + orderNumber));
     }
 
-    /**
-     * Listagem de pedidos com paginação e filtro opcional
-     */
     @Override
     @Transactional(readOnly = true)
     public List<OrderDTO> listOrders(int page, int size, OrderStatus status) {
@@ -358,9 +324,6 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    /**
-     * Consulta de status com cache de curta duração
-     */
     @Override
     @Transactional(readOnly = true)
     @Cacheable(value = "orderStatuses", key = "#id")
@@ -379,17 +342,11 @@ public class OrderServiceImpl implements OrderService {
         return statusDTO;
     }
 
-    /**
-     * Busca entidade com otimização de cache
-     */
     private Order findOrderEntityById(UUID id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pedido não encontrado: " + id));
     }
 
-    /**
-     * Atualização de status com nova transação
-     */
     @Transactional
     protected void updateOrderStatus(UUID id) {
         orderRepository.findById(id).ifPresent(order -> {
@@ -398,9 +355,6 @@ public class OrderServiceImpl implements OrderService {
         });
     }
 
-    /**
-     * Mapeamento DTO -> Entity otimizado
-     */
     private Order mapToEntity(OrderDTO dto) {
         Order order = new Order();
         order.setOrderNumber(dto.getOrderNumber());
@@ -419,9 +373,6 @@ public class OrderServiceImpl implements OrderService {
         return order;
     }
 
-    /**
-     * Mapeamento Entity -> DTO otimizado
-     */
     public OrderDTO mapToDto(Order entity) {
         OrderDTO dto = new OrderDTO();
         dto.setId(entity.getId());
@@ -441,9 +392,6 @@ public class OrderServiceImpl implements OrderService {
         return dto;
     }
 
-    /**
-     * Mapeamento de item da Entity -> DTO
-     */
     private OrderItemDTO mapToItemDto(OrderItem entity) {
         OrderItemDTO dto = new OrderItemDTO();
         dto.setId(entity.getId());

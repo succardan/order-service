@@ -1,73 +1,66 @@
 spring:
-  # Configurações do banco de dados
   datasource:
-    url: jdbc:postgresql://localhost:5433/postgres
-    username: postgres
-    password: Succar@123
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:Succar@123}
     driver-class-name: org.postgresql.Driver
-    # Configurações otimizadas do pool de conexões Hikari
     hikari:
-      maximum-pool-size: 30  # Suporte a mais conexões simultâneas
-      minimum-idle: 10       # Manter mais conexões mínimas
-      connection-timeout: 20000  # 20 segundos para timeout de conexão
-      idle-timeout: 600000   # 10 minutos para timeout de idle
-      max-lifetime: 1800000  # 30 minutos de tempo máximo de vida
-      connection-test-query: SELECT 1  # Query leve para testar conexões
+      maximum-pool-size: 50
+      minimum-idle: 20
+      connection-timeout: 20000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
 
-  # Configurações JPA/Hibernate
   jpa:
     hibernate:
-      ddl-auto: validate  # Em produção, apenas validar o esquema
-    show-sql: false       # Desativar em produção para melhor performance
+      ddl-auto: update
+    show-sql: false
     properties:
       hibernate:
-        format_sql: false  # Desativar em produção
-        # Configurações para melhorar performance
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
         jdbc:
-          batch_size: 50  # Aumentar tamanho do batch
+          batch_size: 100
         order_inserts: true
         order_updates: true
-        # Cache de segundo nível
         cache:
           use_second_level_cache: true
           use_query_cache: true
           region.factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
-        generate_statistics: false  # Desativar estatísticas em produção
-        # Otimização de conexões
+        generate_statistics: false
         connection:
           provider_disables_autocommit: true
-        # Otimizar para batch
-        default_batch_fetch_size: 100
+        default_batch_fetch_size: 200
 
-  # Configurações de cache
   cache:
     type: caffeine
-    cache-names: orders,products,calculations
+    cache-names: orders,products,calculations,orderNumbers,orderHashes,orderStatuses
     caffeine:
-      spec: maximumSize=10000,expireAfterAccess=3600s
+      spec: maximumSize=20000,expireAfterAccess=3600s
 
-  # Configuração de tarefas assíncronas
   task:
     execution:
       pool:
-        core-size: 15
-        max-size: 50
+        core-size: 20
+        max-size: 100
         queue-capacity: 2000
         keep-alive: 60s
       thread-name-prefix: async-task-
+      
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
 
-# Configurações do servidor web
 server:
   port: 8080
-  # Configurações Tomcat otimizadas
   tomcat:
-    max-threads: 200
-    min-spare-threads: 20
-    max-connections: 8192
-    accept-count: 100
+    max-connections: 20000
+    accept-count: 500
     connection-timeout: 20000
 
-# Configurações para resiliência
 resilience4j:
   circuitbreaker:
     instances:
@@ -103,18 +96,16 @@ resilience4j:
         enableExponentialBackoff: true
         exponentialBackoffMultiplier: 2
 
-# Integração com sistemas externos
 external-service:
   product-a:
-    url: http://localhost:8081/api
-    connect-timeout: 2000
-    read-timeout: 5000
+    url: ${EXTERNAL_SERVICE_A_URL:http://localhost:8081/api}
+    connect-timeout: ${EXTERNAL_SERVICE_A_CONNECT_TIMEOUT:2000}
+    read-timeout: ${EXTERNAL_SERVICE_A_READ_TIMEOUT:5000}
   product-b:
-    url: http://localhost:8082/api
-    connect-timeout: 2000
-    read-timeout: 5000
+    url: ${EXTERNAL_SERVICE_B_URL:http://localhost:8082/api}
+    connect-timeout: ${EXTERNAL_SERVICE_B_CONNECT_TIMEOUT:2000}
+    read-timeout: ${EXTERNAL_SERVICE_B_READ_TIMEOUT:5000}
 
-# Configuração para métricas e monitoramento
 management:
   endpoints:
     web:
@@ -132,5 +123,4 @@ management:
       export:
         enabled: true
 
-# Desativar aviso de "open-in-view"
 spring.jpa.open-in-view: false

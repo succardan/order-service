@@ -1,0 +1,77 @@
+spring:
+  # Database config for tests
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  # JPA/Hibernate configuration for tests
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+        # Desabilitar cache de segundo nível nos testes
+        cache:
+          use_second_level_cache: false
+          use_query_cache: false
+
+  # Desabilitar cache completamente para testes
+  cache:
+    type: none
+
+  # Disable actuator security for tests
+  management:
+    security:
+      enabled: false
+
+# Disable metrics and monitoring for tests
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  prometheus:
+    metrics:
+      export:
+        enabled: false
+
+# External service mocks
+external-service:
+  product-a:
+    url: http://localhost:8081/api
+  product-b:
+    url: http://localhost:8082/api
+
+# Circuit breaker configuration for tests
+resilience4j:
+  circuitbreaker:
+    instances:
+      externalServiceA:
+        registerHealthIndicator: false
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        waitDurationInOpenState: 1000
+      externalServiceB:
+        registerHealthIndicator: false
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        waitDurationInOpenState: 1000
+
+  # Rate limiter configuration for tests
+  ratelimiter:
+    instances:
+      default:
+        limitForPeriod: 1000
+        limitRefreshPeriod: 100ms
+        timeoutDuration: 100ms
+
+# Scheduler configuration for tests
+app:
+  scheduler:
+    retry-limit: 3
+    batch-size: 10

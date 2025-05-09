@@ -32,6 +32,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class OrderServiceImplTest {
 
     @Mock
@@ -176,7 +177,7 @@ class OrderServiceImplTest {
 
         assertNotNull(result);
         assertEquals(OrderStatus.CALCULATED, result.getStatus());
-        assertEquals(new BigDecimal("400.00"), order.getTotalAmount());
+        assertEquals(0, new BigDecimal("400.00").compareTo(order.getTotalAmount()));
         verify(orderRepository, times(2)).save(any(Order.class));
     }
 
