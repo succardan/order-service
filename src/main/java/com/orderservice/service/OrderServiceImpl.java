@@ -90,14 +90,14 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
         log.info("Pedido criado com sucesso: {}", savedOrder.getOrderNumber());
 
-        orderProcessingExecutor.execute(() -> {
+        CompletableFuture.runAsync(() -> {
             try {
                 processOrderAsync(savedOrder.getId());
             } catch (Exception e) {
                 log.error("Erro no processamento assíncrono inicial do pedido {}: {}",
                         savedOrder.getId(), e.getMessage(), e);
             }
-        });
+        }, orderProcessingExecutor);
 
         return mapToDto(savedOrder);
     }
